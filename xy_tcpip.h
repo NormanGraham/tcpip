@@ -5,18 +5,37 @@
    
     class xy_buffer { 
        public: 
-           char *ptrb = NULL; 
+           unsigned char *ptrb = NULL; 
            unsigned short allocated = 0;
            unsigned short ip = 0;
            unsigned errorCount = 0; 
+           static unsigned short MaxBufferSize = 16 * 1024; 
        
-           void bShallowCopy( xy_buffer *xy ) { 
-              ptrb = xy->ptrb; 
-              allocated = xy->allocated; 
-              ip = xy->ip;
-              // does not copy errorCount.
+           xy_buffer ( const xy_buffer *xy1, const xy_buffer *xy2 ) { 
+               allocated = xy1->allocated + xy2->allocated; 
+               if ( allocated > MaxBufferSize ) {
+                  allocated = 0; 
+                  errorCount++; 
+               } 
+               else { 
+                 ptrb = new unsigned char [allocated]; 
+                 memset(ptrb, 0, allocated); 
+                 unsigned char *b = ptrb; 
+                 memcpy( b, xy1->ptr, xy1->allocated);
+                 b+= xy1->allocated; 
+                 memcpy( b, xy2->ptr, xy2->allocated); 
            }; 
        
+           xy_buffer ( const unsigned char *p, unsigned short len ) {
+              if ( len > MaxBufferSize ) { 
+                 errorCount++; 
+              } 
+              else {
+                 ptrb = new unsigned char [ len ]; 
+                 memcpy( ptrb, p, len ); 
+                 allocated = len;
+              }
+           }; 
            void Set( int offset, unsigned char *src, unsigned short len ) {
               if ( offset < 0 ) 
                  errorCount++; 
@@ -25,7 +44,7 @@
                    unsigned char *tmpPtr = ptrb; 
                    for (; (A) && (offset); offset--, A--, tmpPtr++ )
                       ; 
-                   if ( !A ) { 
+                   if ( !A && (len) ) { 
                       errorCount++; 
                    } 
                    else { 
@@ -56,9 +75,13 @@
                  ip = 0;
            };
            void prefix( xy_buffer *xb) {
+                   // create a new buffer, copy both into, copy both buffers into tmp, then 
               xy_buffer newxy;
               newxy.bufferAllocate ( allocated + xb.allocated) ; 
-                    
+              newxy.Set(0, xb->ptrb, xb->len ); 
+              newxy.Set(xb->len, ptrb, len); 
+              bShallowCopy( newxy ); 
+              newxy.ptrb = NULL; // 
            }; 
            ~xy_buffer() { 
              bufferFree(); 
