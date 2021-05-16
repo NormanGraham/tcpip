@@ -26,16 +26,6 @@
                  memcpy( b, xy2->ptr, xy2->allocated); 
            }; 
        
-           xy_buffer ( const unsigned char *p, unsigned short len ) {
-              if ( len > MaxBufferSize ) { 
-                 errorCount++; 
-              } 
-              else {
-                 ptrb = new unsigned char [ len ]; 
-                 memcpy( ptrb, p, len ); 
-                 allocated = len;
-              }
-           }; 
            void Set( int offset, unsigned char *src, unsigned short len ) {
               if ( offset < 0 ) 
                  errorCount++; 
@@ -50,9 +40,19 @@
                    else { 
                       memcpy( tmpPtr, src, len > A ? A : len );   
                    }                     
+           }; 
+           
+           xy_buffer ( const unsigned char *p, unsigned short len ) {
+              if ( len > MaxBufferSize ) { 
+                 errorCount++; 
+              } 
+              else {
+                 ptrb = new unsigned char [ len ]; 
+                 memcpy( ptrb, p, len ); 
+                 allocated = len;
               }
            }; 
-           void bAllocate( unsigned short A ) { 
+                      void bAllocate( unsigned short A ) { 
                    if ( ptrb )  
                      delete [] ptrb;
                    ptrb  = NULL;
@@ -81,7 +81,7 @@
               newxy.Set(0, xb->ptrb, xb->len ); 
               newxy.Set(xb->len, ptrb, len); 
               bShallowCopy( newxy ); 
-              newxy.ptrb = NULL; // 
+              newxy.ptrb = NULL; // *this, now owns pointer, after shallow copy.
            }; 
            ~xy_buffer() { 
              bufferFree(); 
